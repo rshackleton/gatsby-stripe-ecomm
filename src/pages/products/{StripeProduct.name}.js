@@ -41,30 +41,38 @@ const ProductPage = ({ data }) => {
       <SEO title={`${data.stripeProduct.name}`} />
       <h1>{data.stripeProduct.name}</h1>
       <form onSubmit={redirectToCheckout}>
-        <fieldset disabled={loading}>
-          <div>
-            <label htmlFor="volume">Volume:</label>
-            <select id="volume" name="volume" required>
-              {orderBy(data.stripeProduct.prices, ['metadata.order']).map(
-                price => (
-                  <option key={price.id} value={price.id}>
-                    {price.metadata.volume}
-                  </option>
-                ),
-              )}
-            </select>
+        <fieldset
+          disabled={loading}
+          style={{
+            display: 'grid',
+            gap: '16px',
+            gridTemplateColumns: 'auto auto',
+            justifyContent: 'flex-start',
+            padding: '32px',
+          }}
+        >
+          <label htmlFor="volume">Volume:</label>
+          <select id="volume" name="volume" required>
+            {orderBy(data.stripeProduct.prices, ['metadata.order']).map(
+              price => (
+                <option key={price.id} value={price.id}>
+                  {price.metadata.volume}
+                </option>
+              ),
+            )}
+          </select>
+          <label htmlFor="quantity">Quantity:</label>
+          <input
+            id="quantity"
+            name="quantity"
+            type="number"
+            defaultValue={1}
+            min={1}
+            required
+          />
+          <div style={{ gridColumn: 'span 2' }}>
+            <button type="submit">Buy</button>
           </div>
-          <div>
-            <label htmlFor="quantity">Quantity:</label>
-            <input
-              id="quantity"
-              name="quantity"
-              type="number"
-              defaultValue={1}
-              required
-            />
-          </div>
-          <button type="submit">Buy</button>
         </fieldset>
       </form>
       <Link to="/">Go back to the homepage</Link>
