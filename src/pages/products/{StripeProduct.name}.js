@@ -7,13 +7,12 @@ import SEO from '../../components/seo';
 import { getStripe } from '../../helpers/getStripe';
 
 const ProductPage = ({ data }) => {
+  const [price, setPrice] = useState(null);
+  const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
 
   const redirectToCheckout = async event => {
     event.preventDefault();
-
-    const price = event.target.volume.value;
-    const quantity = parseInt(event.target.quantity.value, 10);
 
     if (!price || !quantity) {
       return;
@@ -25,7 +24,7 @@ const ProductPage = ({ data }) => {
 
     const { error } = await stripe.redirectToCheckout({
       mode: 'payment',
-      lineItems: [{ price, quantity }],
+      lineItems: [{ price: price.id, quantity }],
       successUrl: `http://localhost:8000/`,
       cancelUrl: window.location.href,
     });
@@ -39,7 +38,18 @@ const ProductPage = ({ data }) => {
   return (
     <Layout>
       <SEO title={`${data.stripeProduct.name}`} />
-      <h1>{data.stripeProduct.name}</h1>
+      <h1>
+        {data.stripeProduct.name}
+        {price && (
+          <>
+            <br />
+            <small>
+              {price.metadata.volume} (
+              {formatPrice(price.unit_amount / 100, price.currency)})
+            </small>
+          </>
+        )}
+      </h1>
       <form onSubmit={redirectToCheckout}>
         <fieldset
           disabled={loading}
@@ -52,11 +62,25 @@ const ProductPage = ({ data }) => {
           }}
         >
           <label htmlFor="volume">Volume:</label>
-          <select id="volume" name="volume" required>
+          <select
+            id="volume"
+            name="volume"
+            required
+            value={price?.id ?? ''}
+            onChange={event => {
+              setPrice(
+                data.stripeProduct.prices.find(
+                  p => p.id === event.target.value,
+                ),
+              );
+            }}
+          >
+            <option value="">Select an option</option>
             {orderBy(data.stripeProduct.prices, ['metadata.order']).map(
               price => (
                 <option key={price.id} value={price.id}>
-                  {price.metadata.volume}
+                  {price.metadata.volume} (
+                  {formatPrice(price.unit_amount / 100, price.currency)})
                 </option>
               ),
             )}
@@ -66,9 +90,10 @@ const ProductPage = ({ data }) => {
             id="quantity"
             name="quantity"
             type="number"
-            defaultValue={1}
             min={1}
             required
+            value={quantity}
+            onChange={event => setQuantity(parseInt(event.target.value, 10))}
           />
           <div style={{ gridColumn: 'span 2' }}>
             <button type="submit">Buy</button>
@@ -100,3 +125,10 @@ export const query = graphql`
     }
   }
 `;
+
+function formatPrice(value, currency) {
+  return new Intl.NumberFormat(undefined, {
+    currency,
+    style: 'currency',
+  }).format(value);
+}
